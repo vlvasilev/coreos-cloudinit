@@ -129,18 +129,23 @@ func Apply(cfg config.CloudConfig, ifaces []network.InterfaceGenerator, env *Env
 	}
 
 	var units []system.Unit
-	for _, u := range cfg.CoreOS.Units {
-		units = append(units, system.Unit{Unit: u})
-	}
+	if cfg.CoreOS.Enable {
+		for _, u := range cfg.CoreOS.Units {
+			units = append(units, system.Unit{Unit: u})
+		}
 
-	for _, ccu := range []CloudConfigUnit{
-		system.Etcd{Etcd: cfg.CoreOS.Etcd},
-		system.Etcd2{Etcd2: cfg.CoreOS.Etcd2},
-		system.Fleet{Fleet: cfg.CoreOS.Fleet},
-		system.Locksmith{Locksmith: cfg.CoreOS.Locksmith},
-		system.Update{Update: cfg.CoreOS.Update, ReadConfig: system.DefaultReadConfig},
-	} {
-		units = append(units, ccu.Units()...)
+		for _, ccu := range []CloudConfigUnit{
+			system.Etcd{Etcd: cfg.CoreOS.Etcd},
+			system.Etcd2{Etcd2: cfg.CoreOS.Etcd2},
+			system.Fleet{Fleet: cfg.CoreOS.Fleet},
+			system.Locksmith{Locksmith: cfg.CoreOS.Locksmith},
+			system.Update{Update: cfg.CoreOS.Update, ReadConfig: system.DefaultReadConfig},
+		} {
+			units = append(units, ccu.Units()...)
+		}
+	}
+	for _, u := range cfg.Units {
+		units = append(units, system.Unit{Unit: u})
 	}
 
 	wroteEnvironment := false

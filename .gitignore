@@ -2,3 +2,7 @@
 bin/
 coverage/
 gopath/
+vendor/
+Gopkg.lock
+Gopkg.toml
+_vendor-20191004064552/

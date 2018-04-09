@@ -31,6 +31,7 @@ type CloudConfig struct {
 	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 	CoreOS            CoreOS   `yaml:"coreos"`
 	WriteFiles        []File   `yaml:"write_files"`
+	Units             []Unit   `yaml:"units"`
 	Hostname          string   `yaml:"hostname"`
 	Users             []User   `yaml:"users"`
 	ManageEtcHosts    EtcHosts `yaml:"manage_etc_hosts"`
@@ -38,13 +39,14 @@ type CloudConfig struct {
 
 type CoreOS struct {
 	Etcd      Etcd      `yaml:"etcd"      deprecated:"etcd is no longer shipped in Container Linux"`
-	Etcd2     Etcd2     `yaml:"etcd2"     deprecated:"etcd2 will soon be removed from Container Linux"`
+	Etcd2     Etcd2     `yaml:"etcd2"     deprecated:"etcd2 is no longer shipped in Container Linux"`
 	Flannel   Flannel   `yaml:"flannel"`
 	Fleet     Fleet     `yaml:"fleet"     deprecated:"fleet is no longer shipped in Container Linux"`
 	Locksmith Locksmith `yaml:"locksmith"`
 	OEM       OEM       `yaml:"oem"`
 	Update    Update    `yaml:"update"`
 	Units     []Unit    `yaml:"units"`
+	Enable    bool
 }
 
 func IsCloudConfig(userdata string) bool {
@@ -65,6 +67,9 @@ func NewCloudConfig(contents string) (*CloudConfig, error) {
 	}
 	var cfg CloudConfig
 	err := yaml.Unmarshal([]byte(contents), &cfg)
+	if strings.Contains(contents, "coreos:") {
+		cfg.CoreOS.Enable = true
+	}
 	return &cfg, err
 }
 

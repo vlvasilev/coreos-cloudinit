@@ -31,6 +31,7 @@ import (
 	"github.com/coreos/coreos-cloudinit/datasource"
 	"github.com/coreos/coreos-cloudinit/datasource/configdrive"
 	"github.com/coreos/coreos-cloudinit/datasource/file"
+	"github.com/coreos/coreos-cloudinit/datasource/kubeapi"
 	"github.com/coreos/coreos-cloudinit/datasource/metadata/cloudsigma"
 	"github.com/coreos/coreos-cloudinit/datasource/metadata/digitalocean"
 	"github.com/coreos/coreos-cloudinit/datasource/metadata/ec2"
@@ -70,6 +71,14 @@ var (
 			procCmdLine                 bool
 			vmware                      bool
 			ovfEnv                      string
+			kubeapi                     struct {
+				kubeconfig string
+				secret     struct {
+					namespace string
+					name      string
+					path      string
+				}
+			}
 		}
 		convertNetconf string
 		workspace      string
@@ -96,6 +105,10 @@ func init() {
 	flag.BoolVar(&flags.sources.procCmdLine, "from-proc-cmdline", false, fmt.Sprintf("Parse %s for '%s=<url>', using the cloud-config served by an HTTP GET to <url>", proc_cmdline.ProcCmdlineLocation, proc_cmdline.ProcCmdlineCloudConfigFlag))
 	flag.BoolVar(&flags.sources.vmware, "from-vmware-guestinfo", false, "Read data from VMware guestinfo")
 	flag.StringVar(&flags.sources.ovfEnv, "from-vmware-ovf-env", "", "Read data from OVF Environment")
+	flag.StringVar(&flags.sources.kubeapi.kubeconfig, "from-kube-api", "", "Read user-data from kubernetes cluster.The name of the secret were the data is must be specified.")
+	flag.StringVar(&flags.sources.kubeapi.secret.namespace, "kube-secret-namespace", "", "The namespace of the kubernetes secret were the user-data is.")
+	flag.StringVar(&flags.sources.kubeapi.secret.name, "kube-secret-name", "", "The name of the kubernetes secret were the user-data is.")
+	flag.StringVar(&flags.sources.kubeapi.secret.path, "kube-user-data-path", "cloud_config", "The path in the kubernetes secret were the user-data is.")
 	flag.StringVar(&flags.oem, "oem", "", "Use the settings specific to the provided OEM")
 	flag.StringVar(&flags.convertNetconf, "convert-netconf", "", "Read the network config provided in cloud-drive and translate it from the specified format into networkd unit files")
 	flag.StringVar(&flags.workspace, "workspace", "/var/lib/coreos-cloudinit", "Base directory coreos-cloudinit should use to store data")
@@ -173,6 +186,11 @@ func main() {
 	case "vmware":
 	default:
 		fmt.Printf("Invalid option to -convert-netconf: '%s'. Supported options: 'debian, packet, vmware'\n", flags.convertNetconf)
+		os.Exit(2)
+	}
+
+	if flags.sources.kubeapi.kubeconfig != "" && flags.sources.kubeapi.secret.name == "" {
+		log.Println("When --from-kube-api is specified the --kube-secret-name must be specified too!")
 		os.Exit(2)
 	}
 
@@ -314,6 +332,9 @@ func getDatasources() []datasource.Datasource {
 	}
 	if flags.sources.url != "" {
 		dss = append(dss, url.NewDatasource(flags.sources.url))
+	}
+	if flags.sources.kubeapi.kubeconfig != "" {
+		dss = append(dss, kubeapi.NewDatasource(flags.sources.kubeapi.kubeconfig, flags.sources.kubeapi.secret.namespace, flags.sources.kubeapi.secret.name, flags.sources.kubeapi.secret.path))
 	}
 	if flags.sources.configDrive != "" {
 		dss = append(dss, configdrive.NewDatasource(flags.sources.configDrive))
