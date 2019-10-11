@@ -18,6 +18,16 @@ import (
 	"net"
 )
 
+type Severity string
+
+const (
+	DEBUG   Severity = "Debug"
+	INFO    Severity = "Info"
+	WARNING Severity = "Warning"
+	ERROR   Severity = "Error"
+	FATAL   Severity = "Fatal"
+)
+
 type Datasource interface {
 	IsAvailable() bool
 	AvailabilityChanges() bool
@@ -25,6 +35,7 @@ type Datasource interface {
 	FetchMetadata() (Metadata, error)
 	FetchUserdata() ([]byte, error)
 	Type() string
+	LogEvent(Severity, string)
 }
 
 type Metadata struct {

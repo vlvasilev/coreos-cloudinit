@@ -53,3 +53,7 @@ func (f *localFile) FetchUserdata() ([]byte, error) {
 func (f *localFile) Type() string {
 	return "local-file"
 }
+
+func (f *localFile) LogEvent(severity datasource.Severity, msg string) {
+	return
+}

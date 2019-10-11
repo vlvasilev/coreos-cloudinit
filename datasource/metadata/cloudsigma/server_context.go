@@ -71,6 +71,10 @@ func (_ *serverContextService) Type() string {
 	return "server-context"
 }
 
+func (_ *serverContextService) LogEvent(severity datasource.Severity, msg string) {
+
+}
+
 func (scs *serverContextService) FetchMetadata() (metadata datasource.Metadata, err error) {
 	var (
 		inputMetadata struct {

@@ -93,6 +93,10 @@ func (ms metadataService) Type() string {
 	return "ec2-metadata-service"
 }
 
+func (ms metadataService) LogEvent(severity datasource.Severity, msg string) {
+
+}
+
 func (ms metadataService) fetchAttributes(url string) ([]string, error) {
 	resp, err := ms.FetchData(url)
 	if err != nil {

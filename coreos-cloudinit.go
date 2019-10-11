@@ -286,7 +286,10 @@ func main() {
 	}
 
 	if err = initialize.Apply(cc, ifaces, env); err != nil {
-		log.Printf("Failed to apply cloud-config: %v\n", err)
+		msg := fmt.Sprintf("Failed to apply cloud-config: %v", err)
+		log.Println(msg)
+		ds.LogEvent(datasource.ERROR, msg)
+		time.Sleep(3 * time.Second)
 		os.Exit(1)
 	}
 

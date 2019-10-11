@@ -85,6 +85,10 @@ func (c *procCmdline) Type() string {
 	return "proc-cmdline"
 }
 
+func (c *procCmdline) LogEvent(severity datasource.Severity, msg string) {
+	return
+}
+
 func findCloudConfigURL(input string) (url string, err error) {
 	err = errors.New("cloud-config-url not found")
 	for _, token := range strings.Split(input, " ") {

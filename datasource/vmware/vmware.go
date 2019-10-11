@@ -157,3 +157,7 @@ func (v vmware) FetchUserdata() ([]byte, error) {
 func (v vmware) Type() string {
 	return "vmware"
 }
+
+func (v vmware) LogEvent(severity datasource.Severity, msg string) {
+	return
+}

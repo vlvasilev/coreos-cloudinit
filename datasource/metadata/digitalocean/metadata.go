@@ -109,3 +109,7 @@ func (ms *metadataService) FetchMetadata() (metadata datasource.Metadata, err er
 func (ms metadataService) Type() string {
 	return "digitalocean-metadata-service"
 }
+
+func (ms metadataService) LogEvent(severity datasource.Severity, msg string) {
+
+}

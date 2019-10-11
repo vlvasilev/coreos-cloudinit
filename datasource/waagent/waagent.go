@@ -107,6 +107,10 @@ func (a *waagent) Type() string {
 	return "waagent"
 }
 
+func (a *waagent) LogEvent(severity datasource.Severity, msg string) {
+	return
+}
+
 func (a *waagent) tryReadFile(filename string) ([]byte, error) {
 	log.Printf("Attempting to read from %q\n", filename)
 	data, err := a.readFile(filename)

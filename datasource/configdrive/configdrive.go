@@ -84,6 +84,10 @@ func (cd *configDrive) Type() string {
 	return "cloud-drive"
 }
 
+func (cd *configDrive) LogEvent(severity datasource.Severity, msg string) {
+	return
+}
+
 func (cd *configDrive) openstackRoot() string {
 	return path.Join(cd.root, "openstack")
 }

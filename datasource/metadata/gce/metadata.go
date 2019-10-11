@@ -62,6 +62,10 @@ func (ms metadataService) Type() string {
 	return "gce-metadata-service"
 }
 
+func (ms metadataService) LogEvent(severity datasource.Severity, msg string) {
+
+}
+
 func (ms metadataService) fetchString(key string) (string, error) {
 	data, err := ms.FetchData(ms.MetadataUrl() + key)
 	if err != nil {

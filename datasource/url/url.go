@@ -53,3 +53,7 @@ func (f *remoteFile) FetchUserdata() ([]byte, error) {
 func (f *remoteFile) Type() string {
 	return "url"
 }
+
+func (f *remoteFile) LogEvent(severity datasource.Severity, msg string) {
+	return
+}

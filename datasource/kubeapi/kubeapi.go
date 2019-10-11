@@ -15,12 +15,13 @@
 package kubeapi
 
 import (
-	"encoding/base64"
 	"log"
 
 	"github.com/coreos/coreos-cloudinit/datasource"
 	"github.com/coreos/coreos-cloudinit/pkg"
+	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/record"
 )
 
 /*
@@ -46,6 +47,7 @@ type Metadata struct {
 
 type kubeClient struct {
 	clientset       *kubernetes.Clientset
+	recorder        record.EventRecorder
 	secretNamespace string
 	secretName      string
 	userDataPath    string
@@ -53,8 +55,10 @@ type kubeClient struct {
 
 func NewDatasource(kubeconfig, namespace, secret, userDataPath string) *kubeClient {
 	clientset := pkg.NewKubeClient(kubeconfig)
+	recorder := pkg.NewEventRecorder(clientset)
 	return &kubeClient{
 		clientset:       clientset,
+		recorder:        recorder,
 		secretNamespace: namespace,
 		secretName:      secret,
 		userDataPath:    userDataPath,
@@ -91,20 +95,35 @@ func (k *kubeClient) FetchUserdata() ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	userDataEncoded, ok := secret.Data[k.userDataPath]
+	userData, ok := secret.Data[k.userDataPath]
 	if !ok {
+		log.Printf("Could not fing key \"%s\" in the secret!\n", k.userDataPath)
 		return []byte{}, nil
 	}
 
-	var userDataDecoded []byte
-	_, err = base64.StdEncoding.Decode(userDataDecoded, userDataEncoded)
-	if err != nil {
-		return []byte{}, err
-	}
+	// var userDataDecoded []byte
+	// _, err = base64.StdEncoding.Decode(userDataDecoded, userDataEncoded)
+	// if err != nil {
+	// 	return []byte{}, err
+	// }
 
-	return userDataDecoded, nil
+	return userData, nil
 }
 
 func (k *kubeClient) Type() string {
 	return "kubernetes"
+}
+
+func (k *kubeClient) LogEvent(severity datasource.Severity, msg string) {
+	var eventType string
+	switch severity {
+	case datasource.DEBUG, datasource.INFO:
+		eventType = apiv1.EventTypeNormal
+	case datasource.WARNING, datasource.ERROR, datasource.FATAL:
+		eventType = apiv1.EventTypeWarning
+	default:
+		eventType = apiv1.EventTypeWarning
+	}
+	pkg.EmmitEvent(k.clientset, k.recorder, eventType, "CloudInit"+string(severity), msg)
+	//pkg.MakeEvent(k.clientset, string(severity), "default", "CloudInit"+string(severity), msg)
 }
