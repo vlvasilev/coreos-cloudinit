@@ -194,6 +194,17 @@ func main() {
 		os.Exit(2)
 	}
 
+	if flags.sources.kubeapi.kubeconfig == "" {
+		process()
+	} else {
+
+	}
+
+}
+
+func process() {
+	failure := false
+
 	dss := getDatasources()
 	if len(dss) == 0 {
 		fmt.Println("Provide at least one of --from-file, --from-configdrive, --from-ec2-metadata, --from-gce-metadata, --from-cloudsigma-metadata, --from-packet-metadata, --from-digitalocean-metadata, --from-vmware-guestinfo, --from-waagent, --from-url or --from-proc-cmdline")
@@ -303,6 +314,65 @@ func main() {
 	if failure && !flags.ignoreFailure {
 		os.Exit(1)
 	}
+}
+
+func processWithKubeManager() {
+
+}
+
+func applyUserData(userdataBytes []byte, metadata datasource.Metadata) error {
+	// Apply environment to user-data
+	env := initialize.NewEnvironment("/", "", flags.workspace, flags.sshKeyName, metadata)
+	userdata := env.Apply(string(userdataBytes))
+
+	var ccu *config.CloudConfig
+	var script *config.Script
+	switch ud, err := initialize.ParseUserData(userdata); err {
+	case initialize.ErrIgnitionConfig:
+		return fmt.Errorf("detected an Ignition config. Exiting")
+	case nil:
+		switch t := ud.(type) {
+		case *config.CloudConfig:
+			ccu = t
+		case *config.Script:
+			script = t
+		}
+	default:
+		return fmt.Errorf("failed to parse user-data: %v", err)
+	}
+
+	log.Println("Merging cloud-config from meta-data and user-data")
+	cc := mergeConfigs(ccu, metadata)
+
+	var ifaces []network.InterfaceGenerator
+	if flags.convertNetconf != "" {
+		var err error
+		switch flags.convertNetconf {
+		case "debian":
+			ifaces, err = network.ProcessDebianNetconf(metadata.NetworkConfig.([]byte))
+		case "packet":
+			ifaces, err = network.ProcessPacketNetconf(metadata.NetworkConfig.(packet.NetworkData))
+		case "vmware":
+			ifaces, err = network.ProcessVMwareNetconf(metadata.NetworkConfig.(map[string]string))
+		default:
+			err = fmt.Errorf("Unsupported network config format %q", flags.convertNetconf)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to generate interfaces: %v", err)
+		}
+	}
+
+	if err := initialize.Apply(cc, ifaces, env); err != nil {
+		return fmt.Errorf("failed to apply cloud-config: %v", err)
+	}
+
+	if script != nil {
+		if err := runScript(*script, env); err != nil {
+			return fmt.Errorf("failed to run script: %v", err)
+		}
+	}
+
+	return nil
 }
 
 // mergeConfigs merges certain options from md (meta-data from the datasource)

@@ -94,12 +94,7 @@ func EmmitEvent(kubeclientset *kubernetes.Clientset, recorder record.EventRecord
 	}
 	nodeName = "shoot--i330716--gcp-seed-worker-qejhl-z1-755fd89877-b4gxt"
 	node, err := kubeclientset.CoreV1().Nodes().Get(nodeName, metav1.GetOptions{})
-	// node := &apiv1.Node{
-	// 	ObjectMeta: metav1.ObjectMeta{
-	// 		Name: nodeName,
-	// 		UID:  types.UID(nodeName),
-	// 	},
-	// }
+
 	if err != nil {
 		log.Printf("Warrning can't retrieve node form cluster: %v!", err)
 		return
